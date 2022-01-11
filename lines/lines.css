@@ -1,24 +1,16 @@
+/* canvas {
+  position: absolute;
+  top: 100;
+  left: 100;
+  z-index: 1;
+  height: 50;
+} */
+
 body {
-  background-image: linear-gradient(
-    to right top,
-    #845ec2,
-    #a55dbd,
-    #c15db5,
-    #d95fab,
-    #ec64a0,
-    #f66b93,
-    #fc7587,
-    #ff807d,
-    #ff8f72,
-    #ffa168,
-    #ffb461,
-    #ffc75f
-  );
-  color: #4b4453;
+  background-color: #222;
+  color: #000000;
   font-family: "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans",
     "DejaVu Sans", Verdana, sans-serif;
-  font-size: 12px;
-  margin: 0;
-  padding: 0;
-  text-align: center;
+  margin: 10;
+  padding: 10;
 }

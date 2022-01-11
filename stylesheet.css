@@ -1,0 +1,25 @@
+body {
+  background-image: linear-gradient(
+    to right top,
+    #845ec2,
+    #a55dbd,
+    #c15db5,
+    #d95fab,
+    #ec64a0,
+    #f66b93,
+    #fc7587,
+    #ff807d,
+    #ff8f72,
+    #ffa168,
+    #ffb461,
+    #ffc75f
+  );
+  color: #000000;
+  font-family: "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans",
+    "DejaVu Sans", Verdana, sans-serif;
+  margin: 10;
+  padding: 10;
+}
+a:visited {
+  color: #000000;
+}
