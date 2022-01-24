@@ -12,7 +12,7 @@ function draw() {
     for (let j = 0; j < lines[i].steps.length; j++) {
       with(lines[i]){
         with(steps[j]) {
-          stroke(a, b, c , opac);
+          stroke(a, b, c, 255 - (lines[i].steps.length - j)*2);
           strokeWeight(stroke_weight);  
           line(x1, y1, x2, y2);
         }
@@ -35,13 +35,14 @@ function next_step() {
       r6: random(1, 1),
       stroke_weight: random(1, 5),
       opac: 255,
+      it: 0,
       steps: [],
     })
   }
 
 
   for(let i = 0; i < lines.length; i++) {
-    if (lines[i].opac <= 0) {
+    if (lines[i].it >= 255) {
       lines.splice(i, 1);
       continue;
     }
@@ -50,6 +51,7 @@ function next_step() {
       y2 = y1 + r1;
       r1 -= 1;
       opac -= 2;
+      it +=1;
 
 
       a = 256 - Math.abs(x2 - y2) / 7;
