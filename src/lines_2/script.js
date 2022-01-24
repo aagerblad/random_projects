@@ -31,6 +31,7 @@ function draw() {
       c = c + r5;
       r3 = random(-15, 15);
       stroke(a + r3 + c / 5, b + r3 + c / 3, c + r3);
+      strokeWeight(6);
       line(x1, y1, x2, y2);
 
       x1 = x2;
