@@ -12,19 +12,21 @@ function draw() {
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].steps.length == 0) {
       lines.splice(i, 1);
+      i--;
       continue;
     }
     for (let j = 0; j < lines[i].steps.length; j++) {
       if (lines[i].steps[j].life <= 0) {
         lines[i].steps.splice(j, 1);
+        j--;
         continue;
       }
       with (lines[i]) {
         with (steps[j]) {
           life -= 0.01
-          red = max(a * life, 32);
-          green = max(b * life, 32);
-          blue = max(c * life, 32);
+          red = ((a - 32)*life) + 32;
+          green = ((b - 32)*life) + 32;
+          blue = ((c - 32)*life) + 32;
           stroke(red, green, blue);
           strokeWeight(stroke_weight);
           line(x1, y1, x2, y2);
@@ -39,15 +41,12 @@ function get_line() {
     x1: 0,
     y1: random(0, window.innerHeight),
     c: 30,
-    r0: random(0, window.innerHeight),
     r1: random(0, 30),
     r2: random(-5, 15),
     r4: random(20, 23),
     r5: random(3, 9),
     r6: random(1, 1),
     stroke_weight: random(1, 5),
-    opac: 255,
-    it: 0,
     steps: [],
   };
 
@@ -64,8 +63,6 @@ function next_step() {
         x2 = x1 + r4;
         y2 = y1 + r1;
         r1 -= 1;
-        opac -= 2;
-        it += 1;
 
         a = 256 - Math.abs(x2 - y2) / 7;
         b = 40 + Math.abs(x2 - y2) / 3;
