@@ -1,8 +1,20 @@
+var myNumber = 32;
+var x1 = 0;
+var c = 30;
+
+var gui;
+
+
+
 function setup() {
   createCanvas(window.innerWidth, window.innerHeight);
+
+  gui = createGui("UI");
+  gui.addGlobals("myNumber", "x1", "c");
+
   // noLoop();
   lines = [get_line()];
-  counter = 0
+  counter = 0;
 }
 
 function draw() {
@@ -23,10 +35,10 @@ function draw() {
       }
       with (lines[i]) {
         with (steps[j]) {
-          life -= 0.01
-          red = ((a - 32)*life) + 32;
-          green = ((b - 32)*life) + 32;
-          blue = ((c - 32)*life) + 32;
+          life -= 0.01;
+          red = (a - myNumber) * life + myNumber;
+          green = (b - myNumber) * life + myNumber;
+          blue = (c - myNumber) * life + myNumber;
           stroke(red, green, blue);
           strokeWeight(stroke_weight);
           line(x1, y1, x2, y2);
@@ -38,9 +50,9 @@ function draw() {
 
 function get_line() {
   return {
-    x1: 0,
+    x1: x1,
     y1: random(0, window.innerHeight),
-    c: 30,
+    c: c,
     r1: random(0, 30),
     r2: random(-5, 15),
     r4: random(20, 23),
@@ -49,7 +61,6 @@ function get_line() {
     stroke_weight: random(1, 5),
     steps: [],
   };
-
 }
 
 function next_step() {
