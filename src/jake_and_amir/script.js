@@ -135,7 +135,7 @@ d3.csv(
   var mouseleave = function (d) {
     d3.select("#tooltip").style("opacity", 0).text("");
     d3.selectAll("#episode_" + data.no)
-      .style("stroke", "none")
+      .style("stroke", "black")
       .style("opacity", 0.5);
   };
 
@@ -185,7 +185,7 @@ d3.csv(
   gradient
     .append("stop")
     .attr("class", "start")
-    .attr("offset", "0%")
+    .attr("offset", "45%")
     .attr("stop-color", "#e85c94")
     .attr("stop-opacity", 1);
 
@@ -194,12 +194,12 @@ d3.csv(
     .attr("class", "end")
     .attr("offset", "50%")
     .attr("stop-color", "#ffffff")
-    .attr("stop-opacity", 0.5);
+    .attr("stop-opacity", 1);
 
   gradient
     .append("stop")
     .attr("class", "end")
-    .attr("offset", "100%")
+    .attr("offset", "55%")
     .attr("stop-color", "#688cc4")
     .attr("stop-opacity", 1);
 
@@ -218,6 +218,7 @@ d3.csv(
       .attr("r", 5)
       .attr("fill", color)
       .style("opacity", 0.5)
+      .style("stroke", "black")
       .on("mouseover", mouseover)
       .on("mousemove", mousemove)
       .on("mouseleave", mouseleave);
