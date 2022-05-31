@@ -23,7 +23,11 @@ d3.csv(
     "Ijvf/pub?gid=0&single=true&output=csv"
 ).then(function (raw_data) {
   function score_mapper(score) {
-    if (score == "" || score == null) {
+    if (score.includes("N/A")) {
+      console.log(score)
+      return null;
+    } 
+    if (score == "" || score == null || score.includes("N/A")) {
       return null;
     }
     s = 0;
@@ -39,9 +43,9 @@ d3.csv(
       s = 4;
     }
     if (score.includes("+")) {
-      s += 0.3;
+      s += 0.333;
     } else if (score.includes("-")) {
-      s -= 0.3;
+      s -= 0.333;
     }
     return s;
   }
@@ -49,6 +53,12 @@ d3.csv(
   data = raw_data.map(function (d) {
     jake_score = score_mapper(d["Jake Grade"]);
     amir_score = score_mapper(d["Amir Grade"]);
+
+    if(d["Amir Grade"] == "N/A") {
+      console.log(d)
+      console.log(amir_score)
+    }
+
     both_score = null;
 
     if (jake_score == amir_score) {
@@ -61,7 +71,9 @@ d3.csv(
       date: Date.parse(d["Date"]),
       no: d["No."],
       jake_score: jake_score,
+      jake_grade: d["Jake Grade"],
       amir_score: amir_score,
+      amir_grade: d["Amir Grade"],
       both_score: both_score,
       title: d["Title"].replace(/\"/g, ""),
     };
@@ -87,29 +99,44 @@ d3.csv(
   // Three function that change the tooltip when user hover / move / leave a cell
   var mouseover = function (d) {
     data = d.srcElement.__data__;
+    date = new Date(data.date);
     console.log("mouseover");
     d3.select("#tooltip")
       .transition()
       .duration(100)
       .style("opacity", 1)
-      .text(data.title + " " + data.no);
+      .text(
+        data.title +
+          "\n Episode no. " +
+          data.no +
+          "\n" +
+          date.toDateString() +
+          "\n" +
+          "Jake: " +
+          data.jake_grade +
+          "\n" +
+          "Amir: " +
+          data.amir_grade
+      );
 
-    d3.selectAll("#episode_" + data.no).style("stroke", "white");
+    d3.selectAll("#episode_" + data.no)
+      .style("stroke", "white")
+      .style("opacity", 1);
 
     // d3.select(this).style("stroke", "white").style("opacity", 1);
   };
 
   var mousemove = function (d) {
-    console.log(d);
-    console.log(d.srcElement.__data__.title);
     d3.select("#tooltip")
       .style("left", d.x + 10 + "px")
       .style("top", d.y + 10 + "px");
   };
 
   var mouseleave = function (d) {
-    d3.select("#tooltip").style("opacity", 0);
-    d3.selectAll("#episode_" + data.no).style("stroke", "none");
+    d3.select("#tooltip").style("opacity", 0).text("");
+    d3.selectAll("#episode_" + data.no)
+      .style("stroke", "none")
+      .style("opacity", 0.5);
   };
 
   yScale.domain([
@@ -145,69 +172,84 @@ d3.csv(
   // .attr("stroke", "black")
   // .text("Score");
 
-  g.selectAll("dot")
-    .data(
-      data.filter(function (d) {
-        return d.jake_score != d.amir_score;
+  var defs = svg.append("defs");
+
+  var gradient = defs
+    .append("linearGradient")
+    .attr("id", "svgGradient")
+    .attr("x1", "0%")
+    .attr("x2", "100%")
+    .attr("y1", "0%")
+    .attr("y2", "100%");
+
+  gradient
+    .append("stop")
+    .attr("class", "start")
+    .attr("offset", "0%")
+    .attr("stop-color", "#e85c94")
+    .attr("stop-opacity", 1);
+
+  gradient
+    .append("stop")
+    .attr("class", "end")
+    .attr("offset", "50%")
+    .attr("stop-color", "#ffffff")
+    .attr("stop-opacity", 0.5);
+
+  gradient
+    .append("stop")
+    .attr("class", "end")
+    .attr("offset", "100%")
+    .attr("stop-color", "#688cc4")
+    .attr("stop-opacity", 1);
+
+  function add_dots(data, color, yScaleFun) {
+    g.selectAll("dot")
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("cx", function (d) {
+        return xScale(d.date);
       })
-    )
-    .enter()
-    .append("circle")
-    .attr("cx", function (d) {
-      return xScale(d.date);
-    })
-    .attr("cy", function (d) {
+      .attr("cy", yScaleFun)
+      .attr("id", function (d) {
+        return "episode_" + d.no;
+      })
+      .attr("r", 5)
+      .attr("fill", color)
+      .style("opacity", 0.5)
+      .on("mouseover", mouseover)
+      .on("mousemove", mousemove)
+      .on("mouseleave", mouseleave);
+  }
+
+  add_dots(
+    data.filter(function (d) {
+      return d.jake_score != d.amir_score && d.amir_score != null;
+    }),
+    "#e85c94",
+    function (d) {
       return yScale(d.amir_score);
-    })
-    .attr("id", function (d) {
-      return "episode_" + d.no;
-    })
-    .attr("r", 5)
-    .attr("fill", "#e85c94")
-    .on("mouseover", mouseover)
-    .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave);
+    }
+  );
 
-  g.selectAll("dot")
-    .data(
-      data.filter(function (d) {
-        return d.jake_score != d.amir_score;
-      })
-    )
-    .enter()
-    .append("circle")
-    .attr("cx", function (d) {
-      return xScale(d.date);
-    })
-    .attr("cy", function (d) {
+  add_dots(
+    data.filter(function (d) {
+      return d.jake_score != d.amir_score && d.jake_score != null;
+    }),
+    "#688cc4",
+    function (d) {
       return yScale(d.jake_score);
-    })
-    .attr("id", function (d) {
-      return "episode_" + d.no;
-    })
-    .attr("r", 5)
-    .attr("fill", "#688cc4")
-    .on("mouseover", mouseover)
-    .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave);
+    }
+  );
 
-  g.selectAll("dot")
-    .data(
-      data.filter(function (d) {
-        return d.both_score;
-      })
-    )
-    .enter()
-    .append("circle")
-    .attr("cx", function (d) {
-      return xScale(d.date);
-    })
-    .attr("cy", function (d) {
+  add_dots(
+    data.filter(function (d) {
+      return d.both_score;
+    }),
+    "url(#svgGradient)",
+    function (d) {
       return yScale(d.both_score);
-    })
-    .attr("r", 5)
-    .attr("fill", "#ffffff")
-    .on("mouseover", mouseover)
-    .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave);
+    }
+  );
 });
