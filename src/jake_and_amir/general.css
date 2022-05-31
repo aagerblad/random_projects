@@ -1,0 +1,14 @@
+/* canvas {
+  position: absolute;
+  top: 100;
+  left: 100;
+  z-index: 1;
+  height: 50;
+} */
+
+body {
+  background-color: #222;
+  color: #000000;
+  font-family: "Inter", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans",
+    "DejaVu Sans", Verdana, sans-serif;
+}
