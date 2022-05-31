@@ -16,7 +16,16 @@ body {
 h1 {
   color: #ffffff;
   font-size: 2em;
+  font-weight: bold;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+h2 {
+  color: #ffffff;
+  font-size: 2em;
   font-weight: normal;
+  font-style: italic;
   margin: 0;
   padding: 0;
   text-align: center;
