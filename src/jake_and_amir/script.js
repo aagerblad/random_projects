@@ -144,7 +144,6 @@ d3.csv(
     .concat(dataReady[1].values)
     .concat(dataReady[2].values)
     .concat(dataReady[3].values);
-  // console.log(dataReady);
 
   // X-axis
   g.append("g")
@@ -165,59 +164,6 @@ d3.csv(
     .attr("id", "y-axis")
     .attr("color", "white");
 
-  var slider = d3
-    .sliderHorizontal()
-    .min(mindate)
-    .max(maxdate)
-    .step(1)
-    .width(300)
-    .displayValue(false)
-    .on("onchange", (val) => {
-      // console.log(val);
-      xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
-      d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
-
-      // data = dataReady.map((d) => {
-      //   return {
-      //     name: d.name,
-      //     values: d.values.filter((d) => d.date <= val),
-      //   };
-      // });
-      data = dataReady.filter((d) => d.date <= val);
-
-      update_chart(data);
-    });
-
-  d3.select("#slider")
-    .append("svg")
-    .attr("width", 500)
-    .attr("height", 100)
-    .append("g")
-    .attr("transform", "translate(30,30)")
-    .call(slider);
-
-  // data = dataReady.map((d) => {
-  //   return {
-  //     name: d.name,
-  //     values: d.values.filter((d) => d.date <= maxdate),
-  //   };
-  // });
-
-  data = dataReady.filter((d) => d.date <= maxdate);
-
-  enter_chart(data);
-
-  function update_chart(data) {
-    g.selectAll("dot").data(data).transition();
-  }
-  update_chart(data);
-});
-
-function remove_chart() {
-  d3.selectAll("myCircles").update();
-}
-
-function enter_chart(data) {
   var color_fun = function (d) {
     if (d.name == "amir_score") {
       return "#e85c94";
@@ -230,9 +176,17 @@ function enter_chart(data) {
     }
   };
 
-  var dots = g.selectAll("dot")
-    .data(data)
-    .enter()
+  data = dataReady.filter((d) => d.date <= maxdate);
+
+  var dots = g
+    .selectAll("dot")
+    .data(data, function (d) {
+      console.log(d.date + d.name);
+      return d.date + d.name;
+    })
+    .enter();
+
+  dots
     .append("circle")
     .attr("fill", color_fun)
     .attr("cx", function (d) {
@@ -250,15 +204,47 @@ function enter_chart(data) {
     .on("mouseover", mouseover)
     .on("mousemove", mousemove)
     .on("mouseleave", mouseleave);
-  
-  dots
-    .exit()
-    .remove();
-  
-  // circles
-  //   .exit()
-  //   .remove();
 
-  // g.selectAll("myCircles").data(data).exit().remove();
-  // g.selectAll("dot").data(data).exit().remove();
-}
+  function update_chart(data) {
+    dots
+      .data(data)
+      .transition()
+      .attr("cx", function (d) {
+        return xScale(d.date);
+      })
+      .attr("cy", function (d) {
+        return yScale(d.score);
+      });
+  }
+
+  var slider = d3
+    .sliderHorizontal()
+    .min(mindate)
+    .max(maxdate)
+    .step(1)
+    .width(300)
+    .displayValue(false)
+    .on("onchange", (val) => {
+      xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
+      d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
+      data = dataReady.filter((d) => d.date <= val);
+
+      dots
+        .data(data)
+        .transition()
+        .attr("cx", function (d) {
+          return xScale(d.date);
+        })
+        .attr("cy", function (d) {
+          return yScale(d.score);
+        });
+    });
+
+  d3.select("#slider")
+    .append("svg")
+    .attr("width", 500)
+    .attr("height", 100)
+    .append("g")
+    .attr("transform", "translate(30,30)")
+    .call(slider);
+});
