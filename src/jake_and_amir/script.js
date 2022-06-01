@@ -3,7 +3,6 @@
 var mouseover = function (d) {
   data = d.srcElement.__data__;
   date = new Date(data.date);
-  console.log("mouseover");
   d3.select("#tooltip")
     .transition()
     .duration(100)
@@ -46,29 +45,7 @@ var mouseleave = function (d) {
     .style("opacity", 0.8);
 };
 
-function add_dots(data, color, yScaleFun) {
-  g.selectAll("dot")
-    .data(data)
-    .enter()
-    .append("circle")
-    .attr("cx", function (d) {
-      return xScale(d.date);
-    })
-    .attr("cy", yScaleFun)
-    .attr("id", function (d) {
-      return "episode_" + d.no;
-    })
-    .attr("r", 5)
-    .attr("fill", color)
-    .style("opacity", 0.8)
-    .style("stroke", "black")
-    .on("mouseover", mouseover)
-    .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave);
-}
-
 // Start of SVG
-
 const svg = d3.select("#chart").append("svg").attr("viewBox", `0 0 800 800`);
 
 var defs = svg.append("defs");
@@ -116,6 +93,17 @@ var g = svg
   .append("g")
   .attr("transform", "translate(" + margin + "," + margin + ")");
 
+// Tooltip
+d3.select("body")
+  .append("div")
+  .attr("id", "tooltip")
+  .attr("style", "position: absolute; opacity: 0;")
+  .style("background-color", "white")
+  .style("border", "solid")
+  .style("border-width", "2px")
+  .style("border-radius", "5px")
+  .style("padding", "5px");
+
 d3.csv(
   "https://docs.google.com/spreadsheets/d/e/" +
     "2PACX-1vQmFwLzdFfTVjEiQrgktqCfBl8wcPRIFVI" +
@@ -124,25 +112,45 @@ d3.csv(
 ).then(function (raw_data) {
   data = raw_data.map(data_mapper);
 
-  data = data.filter(function (d) {
-    return d.jake_score != null || d.amir_score != null || d.both_score != null;
+  // List of groups (here I have one group per column)
+  var allGroup = ["amir_score", "jake_score", "both_score", "guest_score"];
+
+  // Reformat the data: we need an array of arrays of {x, y} tuples
+  var dataReady = allGroup.map(function (grpName) {
+    // .map allows to do something for each element of the list
+    return {
+      name: grpName,
+      values: data
+        .map(function (d) {
+          return {
+            name: grpName,
+            date: d.date,
+            score: d[grpName],
+            title: d.title,
+            no: d.no,
+            guest_name: d.guest_name,
+            jake_grade: d.jake_grade,
+            amir_grade: d.amir_grade,
+            guest_grade: d.guest_grade,
+          };
+        })
+        .filter(function (d) {
+          return d.score != null;
+        }),
+    };
   });
 
-  // Tooltip
-  d3.select("body")
-    .append("div")
-    .attr("id", "tooltip")
-    .attr("style", "position: absolute; opacity: 0;")
-    .style("background-color", "white")
-    .style("border", "solid")
-    .style("border-width", "2px")
-    .style("border-radius", "5px")
-    .style("padding", "5px");
+  var dataReady = dataReady[0].values
+    .concat(dataReady[1].values)
+    .concat(dataReady[2].values)
+    .concat(dataReady[3].values);
+  // console.log(dataReady);
 
   // X-axis
   g.append("g")
     .attr("transform", "translate(0," + svg_height + ")") // move to bottom
     .attr("color", "white")
+    .attr("id", "x-axis")
     .call(
       d3
         .axisBottom(xScale)
@@ -157,43 +165,27 @@ d3.csv(
     .attr("id", "y-axis")
     .attr("color", "white");
 
-  function enter_chart() {
-    add_dots(
-      data.filter(function (d) { return d.amir_score != null; }),
-      "#e85c94",
-      function (d) { return yScale(d.amir_score); }
-    );
-
-    add_dots(
-      data.filter(function (d) { return d.jake_score != null; }),
-      "#688cc4",
-      function (d) { return yScale(d.jake_score); }
-    );
-
-    add_dots(
-      data.filter(function (d) { return d.guest_score != null; }),
-      "#ffb42c",
-      function (d) { return yScale(d.guest_score); }
-    );
-
-    add_dots(
-      data.filter(function (d) { return d.both_score != null; }),
-      "url(#svgGradient)",
-      function (d) { return yScale(d.both_score); }
-    );
-  }
-
   var slider = d3
     .sliderHorizontal()
-    .min(0)
-    .max(10)
+    .min(mindate)
+    .max(maxdate)
     .step(1)
     .width(300)
     .displayValue(false)
     .on("onchange", (val) => {
-      console.log(val);
-      d3.select("#y-axis").call(d3.axisLeft(yScale.domain([0, val])));
-      enter_chart();
+      // console.log(val);
+      xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
+      d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
+
+      // data = dataReady.map((d) => {
+      //   return {
+      //     name: d.name,
+      //     values: d.values.filter((d) => d.date <= val),
+      //   };
+      // });
+      data = dataReady.filter((d) => d.date <= val);
+
+      update_chart(data);
     });
 
   d3.select("#slider")
@@ -204,5 +196,69 @@ d3.csv(
     .attr("transform", "translate(30,30)")
     .call(slider);
 
-  enter_chart();
+  // data = dataReady.map((d) => {
+  //   return {
+  //     name: d.name,
+  //     values: d.values.filter((d) => d.date <= maxdate),
+  //   };
+  // });
+
+  data = dataReady.filter((d) => d.date <= maxdate);
+
+  enter_chart(data);
+
+  function update_chart(data) {
+    g.selectAll("dot").data(data).transition();
+  }
+  update_chart(data);
 });
+
+function remove_chart() {
+  d3.selectAll("myCircles").update();
+}
+
+function enter_chart(data) {
+  var color_fun = function (d) {
+    if (d.name == "amir_score") {
+      return "#e85c94";
+    } else if (d.name == "jake_score") {
+      return "#688cc4";
+    } else if (d.name == "both_score") {
+      return "url(#svgGradient)";
+    } else if (d.name == "guest_score") {
+      return "#ffb42c";
+    }
+  };
+
+  var dots = g.selectAll("dot")
+    .data(data)
+    .enter()
+    .append("circle")
+    .attr("fill", color_fun)
+    .attr("cx", function (d) {
+      return xScale(d.date);
+    })
+    .attr("cy", function (d) {
+      return yScale(d.score);
+    })
+    .attr("id", function (d) {
+      return "episode_" + d.no;
+    })
+    .attr("r", 5)
+    .style("opacity", 0.8)
+    .style("stroke", "black")
+    .on("mouseover", mouseover)
+    .on("mousemove", mousemove)
+    .on("mouseleave", mouseleave);
+  
+  dots
+    .exit()
+    .remove();
+  
+  // circles
+  //   .exit()
+  //   .remove();
+
+  // g.selectAll("myCircles").data(data).exit().remove();
+  // g.selectAll("dot").data(data).exit().remove();
+}
