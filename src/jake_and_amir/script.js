@@ -204,10 +204,6 @@ d3.csv(
     .on("mouseover", mouseover)
     .on("mousemove", mousemove)
     .on("mouseleave", mouseleave);
-  
-    dots
-      .exit()
-      .remove();
 
   var slider = d3
     .sliderHorizontal()
@@ -219,11 +215,36 @@ d3.csv(
     .on("onchange", (val) => {
       xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
       d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
+      // d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, Date(2010, 1, 1)])));
 
       finaldata = dataReady.filter((d) => d.date <= val);
 
+      dots = g.selectAll("circle").data(finaldata, function (d) {
+        return d.date + d.name;
+      });
+
       dots
-        .transition()
+        .enter()
+        .append("circle")
+        .attr("fill", color_fun)
+        .attr("cx", function (d) {
+          return xScale(d.date);
+        })
+        .attr("cy", function (d) {
+          return yScale(d.score);
+        })
+        .attr("id", function (d) {
+          return "episode_" + d.no;
+        })
+        .attr("r", 5)
+        .style("opacity", 0.8)
+        .style("stroke", "black")
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave);
+
+      dots
+        // .transition()
         .attr("cx", function (d) {
           return xScale(d.date);
         })
@@ -231,6 +252,7 @@ d3.csv(
           return yScale(d.score);
         });
 
+      dots.exit().remove();
     });
 
   d3.select("#slider")
