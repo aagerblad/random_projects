@@ -179,15 +179,15 @@ d3.csv(
   data = dataReady.filter((d) => d.date <= maxdate);
 
   var dots = g
-    .selectAll("dot")
+    .selectAll("circle")
     .data(data, function (d) {
       console.log(d.date + d.name);
       return d.date + d.name;
     })
-    .enter();
+    .enter()
+    .append("circle");
 
   dots
-    .append("circle")
     .attr("fill", color_fun)
     .attr("cx", function (d) {
       return xScale(d.date);
@@ -216,13 +216,9 @@ d3.csv(
       xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
       d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
 
-      data = dataReady.filter((d) => d.date <= val);
+      // data = dataReady.filter((d) => d.date <= val);
 
       dots
-        .data(data, function (d) {
-          console.log(d.date + d.name);
-          return d.date + d.name;
-        })
         .transition()
         .attr("cx", function (d) {
           return xScale(d.date);
@@ -230,6 +226,8 @@ d3.csv(
         .attr("cy", function (d) {
           return yScale(d.score);
         });
+      
+      dots.exit().remove();
     });
 
   d3.select("#slider")
