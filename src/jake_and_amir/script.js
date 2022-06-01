@@ -176,11 +176,11 @@ d3.csv(
     }
   };
 
-  data = dataReady.filter((d) => d.date <= maxdate);
+  var finaldata = dataReady.filter((d) => d.date <= maxdate);
 
   var dots = g
     .selectAll("circle")
-    .data(data, function (d) {
+    .data(finaldata, function (d) {
       console.log(d.date + d.name);
       return d.date + d.name;
     })
@@ -204,6 +204,10 @@ d3.csv(
     .on("mouseover", mouseover)
     .on("mousemove", mousemove)
     .on("mouseleave", mouseleave);
+  
+    dots
+      .exit()
+      .remove();
 
   var slider = d3
     .sliderHorizontal()
@@ -216,7 +220,7 @@ d3.csv(
       xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
       d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
 
-      // data = dataReady.filter((d) => d.date <= val);
+      finaldata = dataReady.filter((d) => d.date <= val);
 
       dots
         .transition()
@@ -226,8 +230,7 @@ d3.csv(
         .attr("cy", function (d) {
           return yScale(d.score);
         });
-      
-      dots.exit().remove();
+
     });
 
   d3.select("#slider")
