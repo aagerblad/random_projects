@@ -46,7 +46,7 @@ var mouseleave = function (d) {
 };
 
 // Start of SVG
-const svg = d3.select("#chart").append("svg").attr("viewBox", `0 0 800 800`);
+const svg = d3.select("#chart").append("svg").attr("viewBox", `0 0 800 600`);
 
 var defs = svg.append("defs");
 
@@ -82,12 +82,6 @@ gradient
 var margin = 100,
   svg_width = 600,
   svg_height = 400;
-
-var mindate = new Date(2007, 1, 1),
-  maxdate = new Date(2016, 1, 1);
-
-var xScale = d3.scaleTime().domain([mindate, maxdate]).range([0, svg_width]),
-  yScale = d3.scaleLinear().domain([0, 4.5]).range([svg_height, 0]);
 
 var g = svg
   .append("g")
@@ -145,6 +139,20 @@ d3.csv(
     .concat(dataReady[2].values)
     .concat(dataReady[3].values);
 
+  var mindate = new Date(
+    d3.min(dataReady, function (d) {
+      return d.date;
+    })
+  );
+  var maxdate = new Date(
+    d3.max(dataReady, function (d) {
+      return d.date;
+    })
+  );
+
+  var xScale = d3.scaleTime().domain([mindate, maxdate]).range([0, svg_width]),
+    yScale = d3.scaleLinear().domain([0, 4.5]).range([svg_height, 0]);
+
   // X-axis
   g.append("g")
     .attr("transform", "translate(0," + svg_height + ")") // move to bottom
@@ -164,87 +172,109 @@ d3.csv(
     .attr("id", "y-axis")
     .attr("color", "white");
 
-  var color_fun = function (d) {
-    if (d.name == "amir_score") {
+  var color_fun = function (name) {
+    if (name == "amir_score") {
       return "#e85c94";
-    } else if (d.name == "jake_score") {
+    } else if (name == "jake_score") {
       return "#688cc4";
-    } else if (d.name == "both_score") {
+    } else if (name == "both_score") {
       return "url(#svgGradient)";
-    } else if (d.name == "guest_score") {
+    } else if (name == "guest_score") {
       return "#ffb42c";
     }
   };
 
+  var legend = g.selectAll("legend").data(allGroup, function (d) {
+    return d + "-legend";
+  }).enter().append("circle");
+
+  const legend_distance = 120;
+  const legend_margin = 50
+
+  legend
+    .attr("id", "legend")
+    .attr("cx", function (d, i) {
+      return i * legend_distance + legend_margin;
+    })
+    .attr("cy", svg_height + 50)
+    .attr("r", 5)
+    .style("fill", color_fun)
+  
+  g.selectAll("legend_label").data(allGroup).enter().append("text")
+    .attr("y", svg_height + 50)
+    .attr("x", function (d, i) {
+      return i * legend_distance + legend_margin + 10;
+    })
+    .text(function (d) {
+      return d;
+    })
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+    .style("fill", "white");
+
   var finaldata = dataReady.filter((d) => d.date <= maxdate);
 
   var dots = g
-    .selectAll("circle")
+    .selectAll("_circle")
     .data(finaldata, function (d) {
-      console.log(d.date + d.name);
       return d.date + d.name;
     })
     .enter()
     .append("circle");
 
-  dots
-    .attr("fill", color_fun)
-    .attr("cx", function (d) {
-      return xScale(d.date);
-    })
-    .attr("cy", function (d) {
-      return yScale(d.score);
-    })
-    .attr("id", function (d) {
-      return "episode_" + d.no;
-    })
-    .attr("r", 5)
-    .style("opacity", 0.8)
-    .style("stroke", "black")
-    .on("mouseover", mouseover)
-    .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave);
+  function render() {
+    dots
+      .attr("fill", (d) => {
+        return color_fun(d.name);
+      })
+      .attr("cx", function (d) {
+        return xScale(d.date);
+      })
+      .attr("cy", function (d) {
+        return yScale(d.score);
+      })
+      .attr("id", function (d) {
+        return "episode_" + d.no;
+      })
+      .attr("r", 5)
+      .style("opacity", 0.8)
+      .style("stroke", "black")
+      .on("mouseover", mouseover)
+      .on("mousemove", mousemove)
+      .on("mouseleave", mouseleave);
+  }
+
+  render();
 
   var slider = d3
-    .sliderHorizontal()
+    .sliderBottom()
     .min(mindate)
     .max(maxdate)
-    .step(1)
+    // .step(1)
     .width(300)
+    .default([mindate, maxdate])
     .displayValue(false)
     .on("onchange", (val) => {
-      xScale = d3.scaleTime().domain([mindate, val]).range([0, svg_width]);
-      d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, val])));
-      // d3.select("#x-axis").call(d3.axisBottom(xScale.domain([mindate, Date(2010, 1, 1)])));
+      newmin = val[0];
+      newmax = val[1];
+      xScale = d3.scaleTime().domain([newmin, newmax]).range([0, svg_width]);
+      d3.select("#x-axis").call(
+        d3
+          .axisBottom(xScale.domain([newmin, newmax]))
+          .tickFormat(d3.timeFormat("%b %y"))
+      );
 
-      finaldata = dataReady.filter((d) => d.date <= val);
+      finaldata = dataReady.filter((d) => newmin <= d.date && d.date <= newmax);
 
       dots = g.selectAll("circle").data(finaldata, function (d) {
         return d.date + d.name;
       });
 
-      dots
-        .enter()
-        .append("circle")
-        .attr("fill", color_fun)
-        .attr("cx", function (d) {
-          return xScale(d.date);
-        })
-        .attr("cy", function (d) {
-          return yScale(d.score);
-        })
-        .attr("id", function (d) {
-          return "episode_" + d.no;
-        })
-        .attr("r", 5)
-        .style("opacity", 0.8)
-        .style("stroke", "black")
-        .on("mouseover", mouseover)
-        .on("mousemove", mousemove)
-        .on("mouseleave", mouseleave);
+      dots.enter().append("circle");
+
+      render();
 
       dots
-        // .transition()
         .attr("cx", function (d) {
           return xScale(d.date);
         })
