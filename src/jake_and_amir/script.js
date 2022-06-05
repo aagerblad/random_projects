@@ -1,12 +1,14 @@
 // FUNCTIONS
 
 var mouseover = function (d) {
+  console.log("mouseover");
   data = d.srcElement.__data__;
   date = new Date(data.date);
   d3.select("#tooltip")
-    .transition()
-    .duration(100)
+    // .transition()
+    // .duration(100)
     .style("opacity", 1)
+    .style("color", "black")
     .text(
       data.title +
         "\n Episode no. " +
@@ -28,18 +30,23 @@ var mouseover = function (d) {
   d3.selectAll("#episode_" + data.no)
     .style("stroke", "white")
     .style("opacity", 1);
+  console.log("mouseover2");
 
   // d3.select(this).style("stroke", "white").style("opacity", 1);
 };
 
 var mousemove = function (d) {
-  d3.select("#tooltip")
+  console.log("mousemove");
+  d3.selectAll("#tooltip")
     .style("left", d.x + 10 + "px")
     .style("top", d.y + 10 + "px");
 };
 
 var mouseleave = function (d) {
-  d3.select("#tooltip").style("opacity", 0).text("");
+  console.log("mouseleave");
+  data = d.srcElement.__data__;
+  d3.selectAll("#tooltip").text("").style("opacity", 0);
+
   d3.selectAll("#episode_" + data.no)
     .style("stroke", "black")
     .style("opacity", 0.8);
@@ -90,6 +97,7 @@ var g = svg
 // Tooltip
 d3.select("body")
   .append("div")
+  .classed("tooltip", true)
   .attr("id", "tooltip")
   .attr("style", "position: absolute; opacity: 0;")
   .style("background-color", "white")
@@ -139,16 +147,8 @@ d3.csv(
     .concat(dataReady[2].values)
     .concat(dataReady[3].values);
 
-  var mindate = new Date(
-    d3.min(dataReady, function (d) {
-      return d.date;
-    })
-  );
-  var maxdate = new Date(
-    d3.max(dataReady, function (d) {
-      return d.date;
-    })
-  );
+  var mindate = new Date(2006, 0,0);
+  var maxdate = new Date(2018, 0,0);
 
   var xScale = d3.scaleTime().domain([mindate, maxdate]).range([0, svg_width]),
     yScale = d3.scaleLinear().domain([0, 4.5]).range([svg_height, 0]);
@@ -172,6 +172,9 @@ d3.csv(
     .attr("id", "y-axis")
     .attr("color", "white");
 
+  /*
+  Color function
+  */
   var color_fun = function (name) {
     if (name == "amir_score") {
       return "#e85c94";
@@ -184,56 +187,66 @@ d3.csv(
     }
   };
 
-  var legend = g.selectAll("legend").data(allGroup, function (d) {
-    return d + "-legend";
-  }).enter().append("circle");
+  /*
+  Add legend
+  */
+  const legend_distance = 120,
+    legend_margin = 50;
 
-  const legend_distance = 120;
-  const legend_margin = 50
-
-  legend
+  g.selectAll("legend")
+    .data(allGroup, (d) => {
+      return d + "-legend";
+    })
+    .enter()
+    .append("circle")
     .attr("id", "legend")
-    .attr("cx", function (d, i) {
+    .attr("cx", (d, i) => {
       return i * legend_distance + legend_margin;
     })
     .attr("cy", svg_height + 50)
     .attr("r", 5)
-    .style("fill", color_fun)
-  
-  g.selectAll("legend_label").data(allGroup).enter().append("text")
+    .style("fill", color_fun);
+
+  g.selectAll("legend_label")
+    .data(allGroup)
+    .enter()
+    .append("text")
     .attr("y", svg_height + 50)
-    .attr("x", function (d, i) {
+    .attr("x", (d, i) => {
       return i * legend_distance + legend_margin + 10;
     })
-    .text(function (d) {
+    .text((d) => {
       return d;
     })
     .attr("text-anchor", "left")
     .style("alignment-baseline", "middle")
     .style("fill", "white");
 
-  var finaldata = dataReady.filter((d) => d.date <= maxdate);
+  /*
+  Add dots
+  */
+  var finaldata = dataReady;
 
   var dots = g
-    .selectAll("_circle")
-    .data(finaldata, function (d) {
+    .selectAll(".dot")
+    .data(finaldata, (d) => {
       return d.date + d.name;
     })
     .enter()
-    .append("circle");
+    .append("circle").classed("dot", true);
 
   function render() {
     dots
       .attr("fill", (d) => {
         return color_fun(d.name);
       })
-      .attr("cx", function (d) {
+      .attr("cx", (d) => {
         return xScale(d.date);
       })
-      .attr("cy", function (d) {
+      .attr("cy", (d) => {
         return yScale(d.score);
       })
-      .attr("id", function (d) {
+      .attr("id", (d) => {
         return "episode_" + d.no;
       })
       .attr("r", 5)
@@ -250,35 +263,31 @@ d3.csv(
     .sliderBottom()
     .min(mindate)
     .max(maxdate)
-    // .step(1)
-    .width(300)
+    .width(400)
     .default([mindate, maxdate])
     .displayValue(false)
     .on("onchange", (val) => {
-      newmin = val[0];
-      newmax = val[1];
-      xScale = d3.scaleTime().domain([newmin, newmax]).range([0, svg_width]);
       d3.select("#x-axis").call(
         d3
-          .axisBottom(xScale.domain([newmin, newmax]))
+          .axisBottom(xScale.domain(val))
           .tickFormat(d3.timeFormat("%b %y"))
       );
 
-      finaldata = dataReady.filter((d) => newmin <= d.date && d.date <= newmax);
+      finaldata = dataReady.filter((d) => val[0] <= d.date && d.date <= val[1]);
 
-      dots = g.selectAll("circle").data(finaldata, function (d) {
+      dots = g.selectAll(".dot").data(finaldata, function (d) {
         return d.date + d.name;
       });
 
-      dots.enter().append("circle");
+      dots.enter().append("circle").classed("dot", true);
 
       render();
 
       dots
-        .attr("cx", function (d) {
+        .attr("cx", (d) => {
           return xScale(d.date);
         })
-        .attr("cy", function (d) {
+        .attr("cy", (d) => {
           return yScale(d.score);
         });
 
